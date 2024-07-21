@@ -4,6 +4,7 @@
 use std::{
     fs::{self, ReadDir},
     io,
+    os::windows::fs::MetadataExt,
 };
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -12,14 +13,19 @@ fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-fn read_directory_files(x: &str) -> ReadDir {
-    let x = x.trim();
+#[derive(Debug)]
+struct File {
+    name: String,
+    path: String,
+    is_dir: bool,
+    size: u64,
+}
 
-    let entries = match fs::read_dir(&x) {
+fn read_directory_files(path: &str) -> ReadDir {
+    let entries = match fs::read_dir(&path) {
         Ok(entries) => entries,
         Err(e) => {
-            println!("failed to read dir {:?}", x);
-            panic!("");
+            panic!("failed to read dir {:?}", path);
         }
     };
 
@@ -28,21 +34,35 @@ fn read_directory_files(x: &str) -> ReadDir {
 
 fn main() {
     println!("Hello, world!");
-    let mut x = String::new();
-    io::stdin().read_line(&mut x).expect("No such direcory");
-    let x = x.trim();
-    let entries = read_directory_files(x);
-    
+    let mut current_files: Vec<File> = Vec::new();
+    let mut path = String::new();
+    io::stdin().read_line(&mut path).expect("No such direcory");
+    let path = path.trim();
+
+    let entries = read_directory_files(path);
+
     for entry in entries {
-        if let Ok(i) = entry {
-            if let Ok(file_type) = i.file_type() {
-                println!("{:?}: {:?}", i.path(), file_type);
-            }else{
-                println!("cannot get file type: {:?}", i.path());
+        if let Ok(entry) = entry {
+            if let Ok(meta) = entry.metadata() {
+                let file_name = entry
+                    .file_name().into_string().unwrap();
+                let file_path = entry
+                    .path().into_os_string().into_string().unwrap();
+
+                // println!("{:?} {:?} {:?}", file_name, file_path, meta.is_dir());
+                current_files.push(File {
+                    name: file_name,
+                    path: file_path,
+                    is_dir: meta.is_dir(),
+                    size: meta.file_size(),
+                })
             }
         }
     }
 
+    for i in 0..current_files.len() {
+        println!("{:?}", current_files.get(i).unwrap());
+    }
 
     // tauri::Builder::default()
     //     .invoke_handler(tauri::generate_handler![greet])
