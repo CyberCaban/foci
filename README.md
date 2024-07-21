@@ -1,7 +1,16 @@
-# Tauri + React + Typescript
+# File Manager 
+File manager made with Rust backend and React frontend
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+## Made with
+- [Rust](https://www.rust-lang.org/)
+- [Tauri](https://tauri.app/)
+- [React](https://reactjs.org/)
 
-## Recommended IDE Setup
+## Features
+- None
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## TODO:
+- [ ] add file viewing
+- [ ] add file creation, deletion, renaming
+
+- [ ] add file searching
