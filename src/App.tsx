@@ -6,10 +6,12 @@ import "./App.css";
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
+  const [files, setFiles] = useState([]);
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
     setGreetMsg(await invoke("greet", { name }));
+    setFiles(await invoke("read_directory_files", { path: "C:\\" }));
   }
 
   return (
@@ -46,6 +48,7 @@ function App() {
       </form>
 
       <p>{greetMsg}</p>
+      <pre>{JSON.stringify(files, null, 2)}</pre>
     </div>
   );
 }

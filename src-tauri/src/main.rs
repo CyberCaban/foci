@@ -7,13 +7,15 @@ use std::{
     os::windows::fs::MetadataExt,
 };
 
+use serde::Serialize;
+
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Clone)]
 struct File {
     name: String,
     path: String,
@@ -21,7 +23,8 @@ struct File {
     size: u64,
 }
 
-fn read_directory_files(path: &str) -> ReadDir {
+#[tauri::command]
+fn read_directory_files(path: &str) -> Vec<File> {
     let entries = match fs::read_dir(&path) {
         Ok(entries) => entries,
         Err(e) => {
@@ -29,27 +32,14 @@ fn read_directory_files(path: &str) -> ReadDir {
         }
     };
 
-    entries
-}
-
-fn main() {
-    println!("Hello, world!");
     let mut current_files: Vec<File> = Vec::new();
-    let mut path = String::new();
-    io::stdin().read_line(&mut path).expect("No such direcory");
-    let path = path.trim();
-
-    let entries = read_directory_files(path);
 
     for entry in entries {
         if let Ok(entry) = entry {
             if let Ok(meta) = entry.metadata() {
-                let file_name = entry
-                    .file_name().into_string().unwrap();
-                let file_path = entry
-                    .path().into_os_string().into_string().unwrap();
+                let file_name = entry.file_name().into_string().unwrap();
+                let file_path = entry.path().into_os_string().into_string().unwrap();
 
-                // println!("{:?} {:?} {:?}", file_name, file_path, meta.is_dir());
                 current_files.push(File {
                     name: file_name,
                     path: file_path,
@@ -60,12 +50,23 @@ fn main() {
         }
     }
 
-    for i in 0..current_files.len() {
-        println!("{:?}", current_files.get(i).unwrap());
-    }
+    current_files
+}
 
-    // tauri::Builder::default()
-    //     .invoke_handler(tauri::generate_handler![greet])
-    //     .run(tauri::generate_context!())
-    //     .expect("error while running tauri application");
+fn main() {
+    println!("Hello, world!");
+    let mut path = String::new();
+    // io::stdin().read_line(&mut path).expect("No such direcory");
+    // let path = path.trim();
+
+    // let files = read_directory_files(path);
+
+    // for i in 0..files.len() {
+    //     println!("{:?}", files.get(i).unwrap());
+    // }
+
+    tauri::Builder::default()
+        .invoke_handler(tauri::generate_handler![greet, read_directory_files])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
