@@ -14,3 +14,4 @@ File manager made with Rust backend and React frontend
 - [ ] add file creation, deletion, renaming
 
 - [ ] add file searching
+- [ ] vim-like command line
