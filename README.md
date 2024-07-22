@@ -13,6 +13,7 @@ File manager made with Rust backend and React frontend
 - [x] add file viewing
 - [ ] add file creation, deletion, renaming
 
+- [ ] favorite folders (Desktop, Documents, Downloads etc.)
 - [ ] folder management system (drag and drop files, changed files)
 - [ ] add file searching
 - [ ] vim-like command line
