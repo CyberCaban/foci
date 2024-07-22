@@ -14,7 +14,6 @@ function App() {
   }, [files]);
 
   useEffect(() => {
-    window.screenTop = 0;
     getFiles(path);
     setDisplayedPath(path);
   }, [path]);
@@ -34,8 +33,12 @@ function App() {
   }
 
   function handlePathChange(e) {
-    e.preventDefault()
-    setPath(formatBackslash(displayedPath, true)); 
+    e.preventDefault();
+    setPath(formatBackslash(displayedPath, true));
+  }
+
+  function handleSelectedFiles(e, file: File) {
+    console.log(e);
   }
 
   return (
@@ -64,13 +67,18 @@ function App() {
 
       {files?.map((file: File) => (
         <div
-          className="file-wrap"
+          key={`${file.name}`}
+          className={`file-wrap `}
           onDoubleClick={() => {
             file.is_dir && (setPath(file.path), setDisplayedPath(file.path));
           }}
+          onClick={(e) => handleSelectedFiles(e, file)}
         >
-          <div key={file.name} className={`${file.is_dir ? "folder" : "file"}`}>
-            {file.name}
+          <div className="flex flex-row">
+            <span>{file.is_dir ? "📁" : "📄"}</span>
+            <div className={`${file.is_dir ? "folder" : "file"}`}>
+              {file.name}
+            </div>
           </div>
           <span>{file.is_dir ? "" : file.size}</span>
         </div>

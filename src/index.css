@@ -2,26 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-.App{
-    @apply bg-gray-200 min-h-screen flex flex-col
+.App {
+  @apply bg-gray-200 min-h-screen flex flex-col;
 }
 
-.folder{
-    @apply text-blue-500
+.folder {
+  @apply text-blue-500;
 }
 
-.file{
-    @apply text-black
+.file {
+  @apply text-black;
 }
 
 .back-btn {
-  @apply bg-slate-400 px-2 rounded-sm mr-2
+  @apply bg-slate-400 px-2 rounded-sm mr-2;
 }
 
 .path-input {
-  @apply w-full px-2 rounded-md border-0
+  @apply w-full px-2 rounded-md border-0;
 }
 
 .file-wrap {
-  @apply flex flex-row justify-between mx-5 hover:bg-slate-100 px-2 cursor-pointer select-none
+  @apply flex flex-row justify-between mx-5 hover:bg-slate-100 px-2 cursor-pointer select-none;
+}
+
+.selected {
+  @apply bg-pink-100;
 }
