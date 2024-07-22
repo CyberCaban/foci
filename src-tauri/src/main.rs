@@ -1,11 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{
-    fs::{self, ReadDir},
-    io,
-    os::windows::fs::MetadataExt,
-};
+use std::{fs, os::windows::fs::MetadataExt};
 
 use serde::Serialize;
 
@@ -56,17 +52,6 @@ fn read_directory_files(path: &str) -> Option<Vec<File>> {
 }
 
 fn main() {
-    println!("Hello, world!");
-    let mut path = String::new();
-    // io::stdin().read_line(&mut path).expect("No such direcory");
-    // let path = path.trim();
-
-    // let files = read_directory_files(path);
-
-    // for i in 0..files.len() {
-    //     println!("{:?}", files.get(i).unwrap());
-    // }
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![greet, read_directory_files])
         .run(tauri::generate_context!())
