@@ -1,55 +1,81 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import "./App.css";
+import "./index.css";
+import { File } from "./types";
+import { formatBackslash } from "./utils";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [displayedPath, setDisplayedPath] = useState("C:\\");
+  const [path, setPath] = useState("C:\\");
   const [files, setFiles] = useState([]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-    setFiles(await invoke("read_directory_files", { path: "C:\\" }));
+  useEffect(() => {
+    // console.log("files", files);
+  }, [files]);
+
+  useEffect(() => {
+    window.screenTop = 0;
+    getFiles(path);
+    setDisplayedPath(path);
+  }, [path]);
+
+  async function getFiles(path: string) {
+    setFiles(await invoke("read_directory_files", { path }));
+  }
+
+  function back() {
+    const spl = path.split("\\");
+    const is_root = spl.length === 2 && spl[1] === "";
+    const is_drive = spl.slice(0, -1).join("\\");
+
+    if (is_root) return;
+    if (is_drive.search(/[A-Z]:$/) === 0) setPath(is_drive + "\\");
+    else setPath(is_drive);
+  }
+
+  function handlePathChange(e) {
+    e.preventDefault()
+    setPath(formatBackslash(displayedPath, true)); 
   }
 
   return (
-    <div className="container">
-      <h1>Welcome to Tauri!</h1>
+    <main className="App">
+      <nav>
+        <form
+          className="flex flex-col mx-5"
+          onSubmit={(e) => handlePathChange(e)}
+        >
+          <label htmlFor="path">{displayedPath}</label>
+          <div className="flex flex-row">
+            <button type="button" className="back-btn" onClick={back}>
+              Back
+            </button>
+            <input
+              className="path-input"
+              id="path"
+              type="text"
+              value={displayedPath}
+              onChange={(e) => setDisplayedPath(e.target.value)}
+              autoComplete="off"
+            ></input>
+          </div>
+        </form>
+      </nav>
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p>{greetMsg}</p>
-      <pre>{JSON.stringify(files, null, 2)}</pre>
-    </div>
+      {files?.map((file: File) => (
+        <div
+          className="file-wrap"
+          onDoubleClick={() => {
+            file.is_dir && (setPath(file.path), setDisplayedPath(file.path));
+          }}
+        >
+          <div key={file.name} className={`${file.is_dir ? "folder" : "file"}`}>
+            {file.name}
+          </div>
+          <span>{file.is_dir ? "" : file.size}</span>
+        </div>
+      ))}
+    </main>
   );
 }
 

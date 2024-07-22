@@ -7,10 +7,10 @@ File manager made with Rust backend and React frontend
 - [React](https://reactjs.org/)
 
 ## Features
-- None
+- You can view files and traverse directories
 
 ## TODO:
-- [ ] add file viewing
+- [x] add file viewing
 - [ ] add file creation, deletion, renaming
 
 - [ ] add file searching
