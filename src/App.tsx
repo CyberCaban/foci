@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import "./index.css";
 import { File } from "./types";
-import { formatBackslash } from "./utils";
 import { open } from "@tauri-apps/api/shell";
+import { useStore } from "./store";
 
 function App() {
+  const [path, back, updatePath] = useStore((state) => [
+    state.path,
+    state.back,
+    state.updatePath,
+  ])
   const [displayedPath, setDisplayedPath] = useState("C:\\");
-  const [path, setPath] = useState("C:\\");
   const [files, setFiles] = useState([]);
 
   useEffect(() => {
@@ -23,19 +27,9 @@ function App() {
     setFiles(await invoke("read_directory_files", { path }));
   }
 
-  function back() {
-    const spl = path.split("\\");
-    const is_root = spl.length === 2 && spl[1] === "";
-    const is_drive = spl.slice(0, -1).join("\\");
-
-    if (is_root) return;
-    if (is_drive.search(/[A-Z]:$/) === 0) setPath(is_drive + "\\");
-    else setPath(is_drive);
-  }
-
   function handlePathChange(e) {
     e.preventDefault();
-    setPath(formatBackslash(displayedPath, true));
+    updatePath(displayedPath);
   }
 
   function handleClickOnFile(e, file: File) {
@@ -44,8 +38,7 @@ function App() {
 
   async function handleDoubleClickOnFile(e, file: File) {
     if (file.is_dir) {
-      setPath(file.path);
-      setDisplayedPath(file.path);
+      updatePath(file.path);
     } else {
       console.log(file);
       await open(file.path);
