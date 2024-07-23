@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import "./index.css";
 import { File } from "./types";
 import { formatBackslash } from "./utils";
+import { open } from "@tauri-apps/api/shell";
 
 function App() {
   const [displayedPath, setDisplayedPath] = useState("C:\\");
@@ -37,8 +38,18 @@ function App() {
     setPath(formatBackslash(displayedPath, true));
   }
 
-  function handleSelectedFiles(e, file: File) {
-    console.log(e);
+  function handleClickOnFile(e, file: File) {
+    // console.log(file);
+  }
+
+  async function handleDoubleClickOnFile(e, file: File) {
+    if (file.is_dir) {
+      setPath(file.path);
+      setDisplayedPath(file.path);
+    } else {
+      console.log(file);
+      await open(file.path);
+    }
   }
 
   return (
@@ -69,10 +80,8 @@ function App() {
         <div
           key={`${file.name}`}
           className={`file-wrap `}
-          onDoubleClick={() => {
-            file.is_dir && (setPath(file.path), setDisplayedPath(file.path));
-          }}
-          onClick={(e) => handleSelectedFiles(e, file)}
+          onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
+          onClick={(e) => handleClickOnFile(e, file)}
         >
           <div className="flex flex-row">
             <span>{file.is_dir ? "📁" : "📄"}</span>
