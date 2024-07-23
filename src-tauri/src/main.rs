@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, os::windows::fs::MetadataExt};
+use std::{fs, path::Path};
 
 use serde::Serialize;
 
@@ -36,13 +36,13 @@ fn read_directory_files(path: &str) -> Option<Vec<File>> {
         if let Ok(entry) = entry {
             if let Ok(meta) = entry.metadata() {
                 let file_name = entry.file_name().into_string().unwrap();
-                let file_path = entry.path().into_os_string().into_string().unwrap();
+                let file_path = entry.path().into_os_string().into_string().unwrap();            
 
                 current_files.push(File {
                     name: file_name,
                     path: file_path,
                     is_dir: meta.is_dir(),
-                    size: meta.file_size(),
+                    size: meta.len(),
                 })
             }
         }
