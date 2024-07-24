@@ -1,9 +1,10 @@
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import "./index.css";
-import { File } from "./types";
+import { DiskInfo, File } from "./types";
 import { open } from "@tauri-apps/api/shell";
 import { useStore } from "./store";
 import { formatSlash } from "./utils";
+import { invoke } from "@tauri-apps/api";
 
 function App() {
   const [files, displayedPath, back, getFiles, setDisplayedPath] = useStore(
@@ -15,6 +16,13 @@ function App() {
       state.setDisplayedPath,
     ]
   );
+  const [disks, setDisks] = useState<DiskInfo[]>([]);
+
+  useEffect(() => {
+    invoke("get_disks").then((res) => setDisks(res as DiskInfo[]));
+
+    getFiles(displayedPath);
+  }, []);
 
   function handlePathChange(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -58,22 +66,32 @@ function App() {
         </form>
       </nav>
 
-      {files?.map((file: File) => (
-        <div
-          key={`${file.name}`}
-          className={`file-wrap `}
-          onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
-          onClick={(e) => handleClickOnFile(e, file)}
-        >
-          <div className="flex flex-row">
-            <span>{file.is_dir ? "📁" : "📄"}</span>
-            <div className={`${file.is_dir ? "folder" : "file"}`}>
-              {file.name}
-            </div>
+      <div className="flex flex-row mx-5">
+        {disks.map((d) => (
+          <div className="flex flex-col select-none hover:bg-slate-100 px-2 py-1" onDoubleClick={() => getFiles(d.path)}>
+            <span>{d.name} ({d.path})</span>
           </div>
-          <span>{file.is_dir ? "" : file.size}</span>
-        </div>
-      ))}
+        ))}
+      </div>
+      
+      {files
+        ?.sort((a) => (a.is_dir ? -1 : 1))
+        .map((file: File) => (
+          <div
+            key={`${file.name}`}
+            className={`file-wrap`}
+            onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
+            onClick={(e) => handleClickOnFile(e, file)}
+          >
+            <div className="flex flex-row">
+              <span>{file.is_dir ? "📁" : "📄"}</span>
+              <div className={`${file.is_dir ? "folder" : "file"}`}>
+                {file.name}
+              </div>
+            </div>
+            <span>{file.is_dir ? "" : file.size}</span>
+          </div>
+        ))}
     </main>
   );
 }
