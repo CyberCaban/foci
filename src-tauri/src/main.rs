@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{fs, path::Path};
+use sysinfo::{Disk, Disks};
 
 use serde::Serialize;
 
@@ -17,6 +18,14 @@ struct File {
     path: String,
     is_dir: bool,
     size: u64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+struct DiskInfo {
+    name: String,
+    path: String,
+    free_space: u64,
+    total_space: u64,
 }
 
 #[tauri::command]
@@ -35,7 +44,7 @@ fn read_directory_files(path: &str) -> Result<Vec<File>, String> {
         if let Ok(entry) = entry {
             if let Ok(meta) = entry.metadata() {
                 let file_name = entry.file_name().into_string().unwrap();
-                let file_path = entry.path().into_os_string().into_string().unwrap();            
+                let file_path = entry.path().into_os_string().into_string().unwrap();
 
                 current_files.push(File {
                     name: file_name,
@@ -50,9 +59,28 @@ fn read_directory_files(path: &str) -> Result<Vec<File>, String> {
     Ok(current_files)
 }
 
+#[tauri::command]
+fn get_disks() -> Vec<DiskInfo> {
+    let mut disks = Disks::new_with_refreshed_list();
+    let res: Vec<_> = disks
+        .list()
+        .iter()
+        .map(|disk| {
+            DiskInfo {
+                name: disk.name().to_str().unwrap().to_string(),
+                path: disk.mount_point().to_str().unwrap().to_string(),
+                free_space: disk.available_space(),
+                total_space: disk.total_space(),
+            }
+        })
+        .collect();
+
+    res
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, read_directory_files])
+        .invoke_handler(tauri::generate_handler![greet, read_directory_files, get_disks])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
