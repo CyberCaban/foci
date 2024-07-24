@@ -20,13 +20,12 @@ struct File {
 }
 
 #[tauri::command]
-fn read_directory_files(path: &str) -> Option<Vec<File>> {
+fn read_directory_files(path: &str) -> Result<Vec<File>, String> {
     let entries = match fs::read_dir(&path) {
         Ok(entries) => entries,
         Err(e) => {
-            println!("{:?}", e);
-            println!("Error reading directory {:?}", path);
-            return None;
+            println!("Error reading directory {}: {:?}", path, e);
+            return Err(e.to_string());
         }
     };
 
@@ -48,7 +47,7 @@ fn read_directory_files(path: &str) -> Option<Vec<File>> {
         }
     }
 
-    Some(current_files)
+    Ok(current_files)
 }
 
 fn main() {

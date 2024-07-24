@@ -1,35 +1,25 @@
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { FormEvent } from "react";
 import "./index.css";
 import { File } from "./types";
 import { open } from "@tauri-apps/api/shell";
 import { useStore } from "./store";
+import { formatSlash } from "./utils";
 
 function App() {
-  const [path, back, updatePath] = useStore((state) => [
-    state.path,
-    state.back,
-    state.updatePath,
-  ])
-  const [displayedPath, setDisplayedPath] = useState("C:\\");
-  const [files, setFiles] = useState([]);
+  const [files, displayedPath, back, getFiles, setDisplayedPath] = useStore(
+    (state) => [
+      state.files,
+      state.displayedPath,
+      state.back,
+      state.getFiles,
+      state.setDisplayedPath,
+    ]
+  );
 
-  useEffect(() => {
-    // console.log("files", files);
-  }, [files]);
-
-  useEffect(() => {
-    getFiles(path);
-    setDisplayedPath(path);
-  }, [path]);
-
-  async function getFiles(path: string) {
-    setFiles(await invoke("read_directory_files", { path }));
-  }
-
-  function handlePathChange(e) {
+  function handlePathChange(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    updatePath(displayedPath);
+    getFiles(formatSlash(e.target.path.value, true));
+    e.target.path.blur();
   }
 
   function handleClickOnFile(e, file: File) {
@@ -38,10 +28,9 @@ function App() {
 
   async function handleDoubleClickOnFile(e, file: File) {
     if (file.is_dir) {
-      updatePath(file.path);
+      getFiles(file.path);
     } else {
-      console.log(file);
-      await open(file.path);
+      open(file.path).catch((e) => console.error(e));
     }
   }
 
