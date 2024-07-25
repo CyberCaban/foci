@@ -88,7 +88,7 @@ function App() {
         ?.sort((a) => (a.is_dir ? -1 : 1))
         .map((file: File) => (
           <a
-            href="#"
+            href={`#${file.path}`}
             key={`${file.name}`}
             className={`file-wrap`}
             onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
