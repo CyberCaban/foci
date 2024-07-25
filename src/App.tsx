@@ -5,21 +5,27 @@ import { open } from "@tauri-apps/api/shell";
 import { useStore } from "./store";
 import { formatSlash } from "./utils";
 import { invoke } from "@tauri-apps/api";
+import { toast, Toaster } from "sonner";
 
 function App() {
-  const [files, displayedPath, back, getFiles, setDisplayedPath] = useStore(
+  const [files, displayedPath, dirUp, getFiles, setDisplayedPath] = useStore(
     (state) => [
       state.files,
       state.displayedPath,
-      state.back,
+      state.dirUp,
       state.getFiles,
       state.setDisplayedPath,
-    ]
+    ],
   );
   const [disks, setDisks] = useState<DiskInfo[]>([]);
 
   useEffect(() => {
-    invoke("get_disks").then((res) => setDisks(res as DiskInfo[]));
+    invoke("get_disks")
+      .then((res) => setDisks(res as DiskInfo[]))
+      .catch((e) => {
+        console.error(e);
+        toast("Error: " + e);
+      });
 
     getFiles(displayedPath);
   }, []);
@@ -38,22 +44,24 @@ function App() {
     if (file.is_dir) {
       getFiles(file.path);
     } else {
-      open(file.path).catch((e) => console.error(e));
+      open(file.path).catch((e) => {
+        console.error(e);
+        toast("Error: " + e);
+      });
     }
   }
 
   return (
     <main className="App">
       <nav>
-        <form
-          className="flex flex-col mx-5"
-          onSubmit={(e) => handlePathChange(e)}
-        >
-          <label htmlFor="path">{displayedPath}</label>
-          <div className="flex flex-row">
-            <button type="button" className="back-btn" onClick={back}>
-              Back
+        <form className="flex flex-col" onSubmit={(e) => handlePathChange(e)}>
+          <div className="flex flex-row items-center">
+            <button type="button" className="back-btn" onClick={dirUp}>
+              {"^"}
             </button>
+            <label htmlFor="path" className="">
+              {/* {displayedPath} */}
+            </label>
             <input
               className="path-input"
               id="path"
@@ -66,18 +74,21 @@ function App() {
         </form>
       </nav>
 
-      <div className="flex flex-row mx-5">
+      <div className="disks-list">
         {disks.map((d) => (
-          <div className="flex flex-col select-none hover:bg-slate-100 px-2 py-1" onDoubleClick={() => getFiles(d.path)}>
-            <span>{d.name} ({d.path})</span>
+          <div className="disk" onDoubleClick={() => getFiles(d.path)}>
+            <span>
+              {d.name} ({d.path})
+            </span>
           </div>
         ))}
       </div>
-      
+
       {files
         ?.sort((a) => (a.is_dir ? -1 : 1))
         .map((file: File) => (
-          <div
+          <a
+            href="#"
             key={`${file.name}`}
             className={`file-wrap`}
             onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
@@ -90,8 +101,10 @@ function App() {
               </div>
             </div>
             <span>{file.is_dir ? "" : file.size}</span>
-          </div>
+          </a>
         ))}
+
+      <Toaster position="bottom-right" />
     </main>
   );
 }
