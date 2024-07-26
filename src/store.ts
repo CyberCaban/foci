@@ -31,7 +31,6 @@ const createNavStore: StateCreator<navStore, [], [], navStore> = (
     get().getFiles(is_drive);
   },
   getFiles: async (path) => {
-    console.log("get files", path);
     invoke("read_directory_files", { path })
       .then((res) => {
         console.log("then", res);

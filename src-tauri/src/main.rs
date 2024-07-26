@@ -2,9 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::{fs, path::Path};
-use sysinfo::{Disk, Disks};
+use sysinfo::Disks;
 
 use serde::Serialize;
+use walkdir::WalkDir;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -61,7 +62,7 @@ fn read_directory_files(path: &str) -> Result<Vec<File>, String> {
 
 #[tauri::command]
 fn get_disks() -> Vec<DiskInfo> {
-    let mut disks = Disks::new_with_refreshed_list();
+    let disks = Disks::new_with_refreshed_list();
     let res: Vec<_> = disks
         .list()
         .iter()
@@ -76,6 +77,27 @@ fn get_disks() -> Vec<DiskInfo> {
         .collect();
 
     res
+}
+
+fn search_in_dir(dir: &Path, pattern: &str) -> Vec<String> {
+    let mut files = Vec::<String>::new();
+
+    let pattern = pattern.to_lowercase();
+    let entries = WalkDir::new(dir)
+        .follow_links(true)
+        .into_iter()
+        .filter_map(|e| e.ok());
+
+    for entry in entries {
+        if let Some(fname) = entry.file_name().to_str() {
+            if fname.to_lowercase().contains(&pattern) {
+                files.push(entry.path().to_str().unwrap().to_string());
+                println!("{}", fname);
+            }
+        }
+    }
+
+    files
 }
 
 fn main() {

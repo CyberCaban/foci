@@ -3,7 +3,7 @@ import "./index.css";
 import { DiskInfo, File } from "./types";
 import { open } from "@tauri-apps/api/shell";
 import { useStore } from "./store";
-import { formatSlash } from "./utils";
+import { convertBytes, formatSlash } from "./utils";
 import { invoke } from "@tauri-apps/api";
 import { toast, Toaster } from "sonner";
 
@@ -88,7 +88,7 @@ function App() {
         ?.sort((a) => (a.is_dir ? -1 : 1))
         .map((file: File) => (
           <a
-            href={`#${file.path}`}
+            href={`${file.path}`}
             key={`${file.name}`}
             className={`file-wrap`}
             onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
@@ -100,7 +100,7 @@ function App() {
                 {file.name}
               </div>
             </div>
-            <span>{file.is_dir ? "" : file.size}</span>
+            <span>{file.is_dir ? "" : convertBytes(file.size)}</span>
           </a>
         ))}
 
