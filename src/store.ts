@@ -11,6 +11,7 @@ interface navStore {
   getFiles: (path: string) => void;
   dirUp: () => void;
   setDisplayedPath: (path: string) => void;
+  setFiles: (files: File[]) => void; // only for debug
 }
 
 const createNavStore: StateCreator<navStore, [], [], navStore> = (
@@ -33,17 +34,18 @@ const createNavStore: StateCreator<navStore, [], [], navStore> = (
   getFiles: async (path) => {
     invoke("read_directory_files", { path })
       .then((res) => {
-        console.log("then", res);
         set({ files: res as File[], path, displayedPath: path });
       })
       .catch((e) => {
-        console.error(e, path);
         toast("Error: " + e);
         set({ displayedPath: get().path});
       });
   },
   setDisplayedPath: (path) => {
     set({ displayedPath: path });
+  },
+  setFiles: (files) => {
+    set({ files });
   },
 });
 

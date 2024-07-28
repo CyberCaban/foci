@@ -1,10 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, path::Path};
+use std::{fs, ops::Deref, path::Path, sync::{Arc, Mutex}};
 use sysinfo::Disks;
 
 use serde::Serialize;
+use tauri::{window, Manager, Window};
 use walkdir::WalkDir;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
@@ -27,6 +28,12 @@ struct DiskInfo {
     path: String,
     free_space: u64,
     total_space: u64,
+}
+
+#[derive(Serialize, Clone)]
+enum SearchStatus {
+    Searching,
+    Finished,
 }
 
 #[tauri::command]
@@ -66,43 +73,62 @@ fn get_disks() -> Vec<DiskInfo> {
     let res: Vec<_> = disks
         .list()
         .iter()
-        .map(|disk| {
-            DiskInfo {
-                name: disk.name().to_str().unwrap().to_string(),
-                path: disk.mount_point().to_str().unwrap().to_string(),
-                free_space: disk.available_space(),
-                total_space: disk.total_space(),
-            }
+        .map(|disk| DiskInfo {
+            name: disk.name().to_str().unwrap().to_string(),
+            path: disk.mount_point().to_str().unwrap().to_string(),
+            free_space: disk.available_space(),
+            total_space: disk.total_space(),
         })
         .collect();
 
     res
 }
 
-fn search_in_dir(dir: &Path, pattern: &str) -> Vec<String> {
-    let mut files = Vec::<String>::new();
-
+#[tauri::command(async)]
+fn search_in_dir(window: Window, dir: String, pattern: String) {
     let pattern = pattern.to_lowercase();
-    let entries = WalkDir::new(dir)
-        .follow_links(true)
-        .into_iter()
-        .filter_map(|e| e.ok());
+    let window = Arc::new(Mutex::new(window));
 
-    for entry in entries {
-        if let Some(fname) = entry.file_name().to_str() {
-            if fname.to_lowercase().contains(&pattern) {
-                files.push(entry.path().to_str().unwrap().to_string());
-                println!("{}", fname);
+    Arc::clone(&window).lock().unwrap().emit("search-status", SearchStatus::Searching).unwrap();
+
+    let win = Arc::clone(&window);
+    let thread = std::thread::spawn(move || {
+        let entries = WalkDir::new(Path::new(&dir))
+            .follow_links(true)
+            .into_iter()
+            .filter_map(|e| e.ok());
+
+        for entry in entries {
+            if let Some(fname) = entry.file_name().to_str() {
+                if fname.to_lowercase().contains(&pattern) {
+                    win.lock().unwrap().emit("file-found", File {
+                        name: fname.to_string(),
+                        path: entry.path().to_str().unwrap().to_string(),
+                        is_dir: entry.file_type().is_dir(),
+                        size: entry.metadata().unwrap().len()
+                    }).unwrap();
+                }
             }
         }
-    }
 
-    files
+    });
+    let _ = thread.join();
+    Arc::clone(&window).lock().unwrap().emit("search-status", SearchStatus::Finished).unwrap();
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![greet, read_directory_files, get_disks])
+        .setup(|app| {
+            let _id = app.emit_all("file-found", "hello");
+
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            read_directory_files,
+            get_disks,
+            search_in_dir
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

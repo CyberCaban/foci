@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import "./index.css";
 import { DiskInfo, File } from "./types";
 import { open } from "@tauri-apps/api/shell";
@@ -6,6 +6,8 @@ import { useStore } from "./store";
 import { convertBytes, formatSlash } from "./utils";
 import { invoke } from "@tauri-apps/api";
 import { toast, Toaster } from "sonner";
+import { listen } from "@tauri-apps/api/event";
+import throbber from "/throbber.svg";
 
 function App() {
   const [files, displayedPath, dirUp, getFiles, setDisplayedPath] = useStore(
@@ -19,7 +21,24 @@ function App() {
   );
   const [disks, setDisks] = useState<DiskInfo[]>([]);
 
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [foundFiles, setFoundFiles] = useState<File[]>([]);
+  const [pendingSearch, setPendingSearch] = useState(false);
+
   useEffect(() => {
+    const unlistenFileFound = listen("file-found", (e) => {
+      setFoundFiles((f) => [...f, e.payload as File]);
+      console.log(e);
+    });
+    const unlistenSearchStatus = listen("search-status", (e) => {
+      if (e.payload === "Searching") {
+        setPendingSearch(true);
+      } else {
+        setPendingSearch(false);
+      }
+      console.log(e);
+    });
+
     invoke("get_disks")
       .then((res) => setDisks(res as DiskInfo[]))
       .catch((e) => {
@@ -28,6 +47,11 @@ function App() {
       });
 
     getFiles(displayedPath);
+
+    return () => {
+      unlistenFileFound.then((f) => f());
+      unlistenSearchStatus.then((f) => f());
+    };
   }, []);
 
   function handlePathChange(e: FormEvent<HTMLFormElement>) {
@@ -51,6 +75,26 @@ function App() {
     }
   }
 
+  async function search(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (searchRef.current?.value === "") return;
+    setFoundFiles([]);
+    const search = searchRef.current?.value;
+    invoke("search_in_dir", { dir: displayedPath, pattern: search })
+      .then((res) => {
+        console.log(res);
+      })
+      .catch((e) => {
+        console.error(e);
+        toast("Error: " + e);
+      });
+  }
+
+  function searchClear() {
+    searchRef.current.value = "";
+    setFoundFiles([]);
+  }
+
   return (
     <main className="App">
       <nav>
@@ -72,16 +116,64 @@ function App() {
             ></input>
           </div>
         </form>
+        <form className="flex flex-row" onSubmit={(e) => search(e)}>
+          <input
+            className="m-2 border-2 border-black"
+            placeholder="Search"
+            type="text"
+            name="search"
+            id="search"
+            ref={searchRef}
+          />
+          {pendingSearch ? (
+            <img src={throbber} alt="" />
+          ) : (
+            <button type="submit" disabled={pendingSearch}>
+              Search
+            </button>
+          )}
+          <button className="m-2" disabled={pendingSearch} type="button" onClick={searchClear}>
+            Clear
+          </button>
+        </form>
       </nav>
 
       <div className="disks-list">
         {disks.map((d) => (
-          <div className="disk" onDoubleClick={() => getFiles(d.path)}>
+          <div
+            className="disk"
+            onDoubleClick={() => getFiles(d.path)}
+            key={d.path}
+          >
             <span>
               {d.name} ({d.path})
             </span>
           </div>
         ))}
+      </div>
+
+      <div className="found_files border border-black">
+        {foundFiles?.map((f) => {
+          console.log(f);
+
+          return (
+            <div
+              className="flex select-none flex-col hover:bg-slate-100"
+              onDoubleClick={(e) => handleDoubleClickOnFile(e, f)}
+            >
+              <div className="flex flex-row justify-between">
+                <div className="flex flex-row">
+                  <span>{f.is_dir ? "📁" : "📄"}</span>
+                  <div className={`${f.is_dir ? "folder" : "file"}`}>
+                    {f.name}
+                  </div>
+                </div>
+                <span>{f.is_dir ? "" : convertBytes(f.size)}</span>
+              </div>
+              <span className="mx-2 truncate">{f.path}</span>
+            </div>
+          );
+        })}
       </div>
 
       {files
