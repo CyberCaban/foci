@@ -105,7 +105,8 @@ fn search_in_dir(window: &Mutex<Window>, dir: String, pattern: String) {
         .emit("search-status", SearchStatus::Searching)
         .unwrap();
 
-    let thread_win = Arc::clone(&window);
+    let (tx, rx) = std::sync::mpsc::channel();
+
     let thread = std::thread::spawn(move || {
         let entries = WalkDir::new(Path::new(&dir))
             .follow_links(true)
@@ -127,19 +128,28 @@ fn search_in_dir(window: &Mutex<Window>, dir: String, pattern: String) {
                         "".to_string()
                     };
 
-                    thread_win.lock().unwrap().emit(
-                        "file-found",
-                        File {
-                            name: fname.to_string(),
-                            path,
-                            is_dir: entry.file_type().is_dir(),
-                            size,
-                        },
-                    );
+                    let f = File {
+                        name: fname.to_string(),
+                        path,
+                        is_dir: entry.file_type().is_dir(),
+                        size,
+                    };
+
+                    tx.send(f).unwrap();
                 }
             }
         }
     });
+
+    for received in rx {
+        println!("File: {:?}", &received);
+        let _ = window
+            .lock()
+            .unwrap()
+            .emit("file-found", received)
+            .unwrap();
+    }
+
     let _ = thread.join();
 
     window

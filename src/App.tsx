@@ -92,7 +92,7 @@ function App() {
   }
 
   function searchClear() {
-    emit("test");
+    emit("search-stop");
     if (searchRef.current === null) return;
     searchRef.current.value = "";
     setFoundFiles([]);
