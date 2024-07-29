@@ -6,7 +6,7 @@ import { useStore } from "./store";
 import { convertBytes, formatSlash } from "./utils";
 import { invoke } from "@tauri-apps/api";
 import { toast, Toaster } from "sonner";
-import { listen } from "@tauri-apps/api/event";
+import { emit, listen } from "@tauri-apps/api/event";
 import throbber from "/throbber.svg";
 
 function App() {
@@ -80,17 +80,20 @@ function App() {
     if (searchRef.current?.value === "") return;
     setFoundFiles([]);
     const search = searchRef.current?.value;
-    invoke("search_in_dir", { dir: displayedPath, pattern: search })
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((e) => {
-        console.error(e);
-        toast("Error: " + e);
-      });
+    emit("search-start", {dir: displayedPath, pattern: search});
+    // invoke("search_in_dir", { dir: displayedPath, pattern: search })
+    //   .then((res) => {
+    //     console.log(res);
+    //   })
+    //   .catch((e) => {
+    //     console.error(e);
+    //     toast("Error: " + e);
+    //   });
   }
 
   function searchClear() {
+    emit("test");
+    if (searchRef.current === null) return;
     searchRef.current.value = "";
     setFoundFiles([]);
   }
@@ -154,10 +157,11 @@ function App() {
 
       <div className="found_files border border-black">
         {foundFiles?.map((f) => {
-          console.log(f);
+          // console.log(f);
 
           return (
             <div
+              key={f.path}
               className="flex select-none flex-col hover:bg-slate-100"
               onDoubleClick={(e) => handleDoubleClickOnFile(e, f)}
             >

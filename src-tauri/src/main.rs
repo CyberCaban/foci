@@ -1,10 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs, ops::Deref, path::Path, sync::{Arc, Mutex}};
+use std::{
+    collections::btree_map,
+    fs,
+    ops::Deref,
+    path::Path,
+    sync::{Arc, Mutex, MutexGuard},
+};
 use sysinfo::Disks;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{window, Manager, Window};
 use walkdir::WalkDir;
 
@@ -34,6 +40,12 @@ struct DiskInfo {
 enum SearchStatus {
     Searching,
     Finished,
+}
+
+#[derive(Deserialize, Debug)]
+struct SearchParams {
+    dir: String,
+    pattern: String,
 }
 
 #[tauri::command]
@@ -84,14 +96,16 @@ fn get_disks() -> Vec<DiskInfo> {
     res
 }
 
-#[tauri::command(async)]
-fn search_in_dir(window: Window, dir: String, pattern: String) {
+fn search_in_dir(window: &Mutex<Window>, dir: String, pattern: String) {
     let pattern = pattern.to_lowercase();
-    let window = Arc::new(Mutex::new(window));
+    let window = Arc::new(Mutex::new(window.lock().unwrap().clone()));
+    window
+        .lock()
+        .unwrap()
+        .emit("search-status", SearchStatus::Searching)
+        .unwrap();
 
-    Arc::clone(&window).lock().unwrap().emit("search-status", SearchStatus::Searching).unwrap();
-
-    let win = Arc::clone(&window);
+    let thread_win = Arc::clone(&window);
     let thread = std::thread::spawn(move || {
         let entries = WalkDir::new(Path::new(&dir))
             .follow_links(true)
@@ -101,25 +115,70 @@ fn search_in_dir(window: Window, dir: String, pattern: String) {
         for entry in entries {
             if let Some(fname) = entry.file_name().to_str() {
                 if fname.to_lowercase().contains(&pattern) {
-                    win.lock().unwrap().emit("file-found", File {
-                        name: fname.to_string(),
-                        path: entry.path().to_str().unwrap().to_string(),
-                        is_dir: entry.file_type().is_dir(),
-                        size: entry.metadata().unwrap().len()
-                    }).unwrap();
+                    let size = if entry.metadata().is_ok() {
+                        entry.metadata().unwrap().len()
+                    } else {
+                        0
+                    };
+
+                    let path = if entry.path().to_str().is_some() {
+                        entry.path().to_str().unwrap().to_string()
+                    } else {
+                        "".to_string()
+                    };
+
+                    thread_win.lock().unwrap().emit(
+                        "file-found",
+                        File {
+                            name: fname.to_string(),
+                            path,
+                            is_dir: entry.file_type().is_dir(),
+                            size,
+                        },
+                    );
                 }
             }
         }
-
     });
     let _ = thread.join();
-    Arc::clone(&window).lock().unwrap().emit("search-status", SearchStatus::Finished).unwrap();
+
+    window
+        .lock()
+        .unwrap()
+        .emit("search-status", SearchStatus::Finished)
+        .unwrap();
 }
 
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
-            let _id = app.emit_all("file-found", "hello");
+            let _main_window = app.get_window("main").unwrap();
+            let _main_window = Arc::new(Mutex::new(_main_window));
+            let win = Arc::clone(&_main_window);
+
+            _main_window
+                .clone()
+                .lock()
+                .unwrap()
+                .listen("search-start", move |e| {
+                    if e.payload().is_none() {
+                        eprintln!("invalid json");
+                        return;
+                    };
+                    let params: SearchParams =
+                        serde_json::from_str(e.payload().unwrap()).expect("invalid json");
+                    println!("search-start: {:?}", params);
+                    // let pattern = e.payload().unwrap().pattern;
+                    // search_in_dir(_main_window, params.dir, params.pattern);
+                    search_in_dir(win.as_ref(), params.dir, params.pattern);
+                });
+
+            Arc::clone(&_main_window)
+                .lock()
+                .unwrap()
+                .listen("search-stop", |e| {
+                    println!("hello");
+                });
 
             Ok(())
         })
@@ -127,7 +186,6 @@ fn main() {
             greet,
             read_directory_files,
             get_disks,
-            search_in_dir
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
