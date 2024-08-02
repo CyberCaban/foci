@@ -1,8 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use crossbeam_channel::{bounded, unbounded};
 use std::{
-    collections::btree_map,
     fs,
     ops::Deref,
     path::Path,
@@ -40,6 +40,7 @@ struct DiskInfo {
 enum SearchStatus {
     Searching,
     Finished,
+    Canceled,
 }
 
 #[derive(Deserialize, Debug)]
@@ -96,99 +97,80 @@ fn get_disks() -> Vec<DiskInfo> {
     res
 }
 
-fn search_in_dir(window: &Mutex<Window>, dir: String, pattern: String) {
+fn search_in_dir(
+    dir: String,
+    pattern: String,
+    r: crossbeam_channel::Receiver<String>,
+    tx: std::sync::mpsc::Sender<File>,
+) -> std::thread::JoinHandle<()> {
     let pattern = pattern.to_lowercase();
-    let window = Arc::new(Mutex::new(window.lock().unwrap().clone()));
-    window
-        .lock()
-        .unwrap()
-        .emit("search-status", SearchStatus::Searching)
-        .unwrap();
 
-    let (tx, rx) = std::sync::mpsc::channel();
+    let entries = WalkDir::new(Path::new(&dir))
+        .follow_links(true)
+        .into_iter()
+        .filter_map(|e| e.ok());
 
     let thread = std::thread::spawn(move || {
-        let entries = WalkDir::new(Path::new(&dir))
-            .follow_links(true)
-            .into_iter()
-            .filter_map(|e| e.ok());
-
         for entry in entries {
             if let Some(fname) = entry.file_name().to_str() {
                 if fname.to_lowercase().contains(&pattern) {
-                    let size = if entry.metadata().is_ok() {
-                        entry.metadata().unwrap().len()
-                    } else {
-                        0
-                    };
-
-                    let path = if entry.path().to_str().is_some() {
-                        entry.path().to_str().unwrap().to_string()
-                    } else {
-                        "".to_string()
-                    };
-
                     let f = File {
                         name: fname.to_string(),
-                        path,
+                        path: entry.path().to_str().expect("invalid path").to_string(),
                         is_dir: entry.file_type().is_dir(),
-                        size,
+                        size: entry.metadata().expect("invalid metadata").len(),
                     };
 
                     tx.send(f).unwrap();
                 }
             }
         }
+        if let Ok(msg) = r.try_recv() {
+            println!("Search canceled {:?}", msg);
+        }
+    });
+    thread
+}
+
+fn search(_main_window: Window, win: Window) {
+    let (s, r) = unbounded();
+
+    _main_window.listen("search-start", move |e| {
+        win.emit("search-status", SearchStatus::Searching).unwrap();
+
+        if e.payload().is_none() {
+            eprintln!("invalid json");
+            return;
+        };
+        let params: SearchParams =
+            serde_json::from_str(e.payload().unwrap()).expect("invalid json");
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        let thread = search_in_dir(params.dir, params.pattern, r.clone(), tx);
+        for received in rx {
+            println!("File: {:?}", &received);
+            let _ = win.emit("file-found", received).unwrap();
+        }
+
+        thread.join().unwrap();
+
+        win.emit("search-status", SearchStatus::Finished).unwrap();
     });
 
-    for received in rx {
-        println!("File: {:?}", &received);
-        let _ = window
-            .lock()
-            .unwrap()
-            .emit("file-found", received)
-            .unwrap();
-    }
-
-    let _ = thread.join();
-
-    window
-        .lock()
-        .unwrap()
-        .emit("search-status", SearchStatus::Finished)
-        .unwrap();
+    _main_window.listen("search-stop", move |e| {
+        println!("hello");
+        // let _ = s.send("stop".to_string()).unwrap();
+    });
 }
 
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
             let _main_window = app.get_window("main").unwrap();
-            let _main_window = Arc::new(Mutex::new(_main_window));
-            let win = Arc::clone(&_main_window);
+            // let _main_window = Arc::new(Mutex::new(_main_window));
+            let win = _main_window.clone();
 
-            _main_window
-                .clone()
-                .lock()
-                .unwrap()
-                .listen("search-start", move |e| {
-                    if e.payload().is_none() {
-                        eprintln!("invalid json");
-                        return;
-                    };
-                    let params: SearchParams =
-                        serde_json::from_str(e.payload().unwrap()).expect("invalid json");
-                    println!("search-start: {:?}", params);
-                    // let pattern = e.payload().unwrap().pattern;
-                    // search_in_dir(_main_window, params.dir, params.pattern);
-                    search_in_dir(win.as_ref(), params.dir, params.pattern);
-                });
-
-            Arc::clone(&_main_window)
-                .lock()
-                .unwrap()
-                .listen("search-stop", |e| {
-                    println!("hello");
-                });
+            search(_main_window, win);
 
             Ok(())
         })

@@ -26,7 +26,7 @@ function App() {
   const [pendingSearch, setPendingSearch] = useState(false);
 
   useEffect(() => {
-    const unlistenFileFound = listen("file-found", (e) => {
+    const unlistenFileFound = listen<File>("file-found", (e) => {
       setFoundFiles((f) => [...f, e.payload as File]);
       console.log(e);
     });
@@ -93,9 +93,9 @@ function App() {
 
   function searchClear() {
     emit("search-stop");
-    if (searchRef.current === null) return;
-    searchRef.current.value = "";
-    setFoundFiles([]);
+    // if (searchRef.current === null) return;
+    // searchRef.current.value = "";
+    // setFoundFiles([]);
   }
 
   return (
@@ -135,7 +135,7 @@ function App() {
               Search
             </button>
           )}
-          <button className="m-2" disabled={pendingSearch} type="button" onClick={searchClear}>
+          <button className="m-2" type="button" onClick={searchClear}>
             Clear
           </button>
         </form>

@@ -15,5 +15,6 @@ File manager made with Rust backend and React frontend
 
 - [ ] favorite folders (Desktop, Documents, Downloads etc.)
 - [ ] folder management system (drag and drop files, changed files)
+- [ ] diffs between folders
 - [x] add file searching
 - [ ] vim-like command line
