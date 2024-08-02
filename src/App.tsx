@@ -39,7 +39,7 @@ function App() {
       console.log(e);
     });
 
-    invoke("get_disks")
+    invoke("get_volumes")
       .then((res) => setDisks(res as DiskInfo[]))
       .catch((e) => {
         console.error(e);
