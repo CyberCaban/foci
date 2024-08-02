@@ -66,8 +66,10 @@
   }
 }
 
-* {
+:root {
   /* @apply flex-wrap; */
+  font-family: "Outfit", sans-serif;
+  font-weight: 400;
 }
 
 main > * {
