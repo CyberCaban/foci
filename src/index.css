@@ -68,8 +68,8 @@
 
 :root {
   /* @apply flex-wrap; */
-  font-family: "Outfit", sans-serif;
-  font-weight: 400;
+  font-family: "Outfit", "Montserrat";
+  font-weight: 500;
 }
 
 main > * {
@@ -97,7 +97,7 @@ main > * {
 }
 
 .file-wrap {
-  @apply flex cursor-pointer select-none flex-row justify-between rounded-sm px-2 hover:bg-slate-100 focus:bg-blue-300/30;
+  @apply flex cursor-pointer select-none flex-row justify-between rounded-sm px-2 py-1 text-base hover:bg-slate-100 focus:bg-blue-300/30;
 }
 
 .selected {

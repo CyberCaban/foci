@@ -1,22 +1,34 @@
 import { create, StateCreator } from "zustand";
 import { devtools } from "zustand/middleware";
 import { invoke } from "@tauri-apps/api";
-import { File } from "./types";
+import { FileInfo, VolumesInfo } from "./types";
 import { toast } from "sonner";
 
 interface navStore {
   path: string;
   displayedPath: string;
-  files: File[];
+  files: FileInfo[];
   getFiles: (path: string) => void;
   dirUp: () => void;
   setDisplayedPath: (path: string) => void;
-  setFiles: (files: File[]) => void; // only for debug
+  setFiles: (files: FileInfo[]) => void; // only for debug
+}
+
+interface SearchStore {
+  foundFiles: FileInfo[];
+  setFoundFiles: (files: FileInfo[]) => void;
+  pendingSearch: boolean;
+  setPendingSearch: (pending: boolean) => void;
+}
+
+interface VolumesStore {
+  volumes: VolumesInfo[];
+  setVolumes: (volumes: VolumesInfo[]) => void;
 }
 
 const createNavStore: StateCreator<navStore, [], [], navStore> = (
   set,
-  get
+  get,
 ) => ({
   path: "C:\\",
   displayedPath: "C:\\",
@@ -34,11 +46,11 @@ const createNavStore: StateCreator<navStore, [], [], navStore> = (
   getFiles: async (path) => {
     invoke("read_directory_files", { path })
       .then((res) => {
-        set({ files: res as File[], path, displayedPath: path });
+        set({ files: res as FileInfo[], path, displayedPath: path });
       })
       .catch((e) => {
         toast("Error: " + e);
-        set({ displayedPath: get().path});
+        set({ displayedPath: get().path });
       });
   },
   setDisplayedPath: (path) => {
@@ -49,11 +61,32 @@ const createNavStore: StateCreator<navStore, [], [], navStore> = (
   },
 });
 
-export const useStore = create<navStore>()(
-  devtools(
-    (...a) => ({
-      ...createNavStore(...a),
-    }),
-    { name: "navStore" }
-  )
+const createSearchStore: StateCreator<SearchStore, [], [], SearchStore> = (
+  set,
+) => ({
+  foundFiles: [],
+  setFoundFiles: (files) => {
+    set({ foundFiles: files });
+  },
+  pendingSearch: false,
+  setPendingSearch: (pending) => {
+    set({ pendingSearch: pending });
+  },
+});
+
+const createVolumesStore: StateCreator<VolumesStore, [], [], VolumesStore> = (
+  set,
+) => ({
+  volumes: [],
+  setVolumes: (volumes) => {
+    set({ volumes });
+  },
+});
+
+export const useStore = create<navStore & SearchStore & VolumesStore>()(
+  devtools((...a) => ({
+    ...createNavStore(...a),
+    ...createSearchStore(...a),
+    ...createVolumesStore(...a),
+  })),
 );
