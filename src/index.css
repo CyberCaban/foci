@@ -81,11 +81,11 @@ main > * {
 }
 
 .folder {
-  @apply text-blue-500;
+  @apply text-blue-500 truncate;
 }
 
 .file {
-  @apply text-black;
+  @apply text-black truncate;
 }
 
 .back-btn {

@@ -5,7 +5,7 @@ function FoundFiles() {
   const foundFiles = useStore((state) => state.foundFiles);
   return (
     <div className="found_files border border-black">
-      {foundFiles?.map((f) => <FileIcon file={f} found={true} />)}
+      {foundFiles.map((f) => <FileIcon file={f} found={true} />)}
     </div>
   );
 }

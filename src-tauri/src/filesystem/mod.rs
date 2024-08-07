@@ -148,8 +148,8 @@ pub fn search(_main_window: Window, win: Window) {
         win.emit("search-status", SearchStatus::Finished).unwrap();
     });
 
-    _main_window.listen("search-stop", move |e| {
-        println!("hello");
+    // _main_window.listen("search-stop", move |e| {
+        // println!("hello");
         // let _ = s.send("stop".to_string()).unwrap();
-    });
+    // });
 }

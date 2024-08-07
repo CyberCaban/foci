@@ -1,8 +1,8 @@
+import { invoke } from "@tauri-apps/api";
+import { toast } from "sonner";
 import { create, StateCreator } from "zustand";
 import { devtools } from "zustand/middleware";
-import { invoke } from "@tauri-apps/api";
 import { FileInfo, VolumesInfo } from "./types";
-import { toast } from "sonner";
 
 interface navStore {
   path: string;
@@ -65,8 +65,8 @@ const createSearchStore: StateCreator<SearchStore, [], [], SearchStore> = (
   set,
 ) => ({
   foundFiles: [],
-  setFoundFiles: (files) => {
-    set({ foundFiles: files });
+  setFoundFiles: (foundFiles) => {
+    set({ foundFiles });
   },
   pendingSearch: false,
   setPendingSearch: (pending) => {

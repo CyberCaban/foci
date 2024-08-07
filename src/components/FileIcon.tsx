@@ -2,7 +2,6 @@ import { useStore } from "@/store";
 import { FileInfo } from "@/types";
 import { convertBytes } from "@/utils";
 import { open } from "@tauri-apps/api/shell";
-import { toast } from "sonner";
 
 interface FileIconProps {
   file: FileInfo;
@@ -16,7 +15,7 @@ function FileIcon({ file, found = false }: FileIconProps) {
     if (file.is_dir) {
       getFiles(file.path);
     } else {
-      open(file.path)
+      open(file.path);
     }
   }
 
@@ -39,7 +38,7 @@ function FileIcon({ file, found = false }: FileIconProps) {
         <div className={`${file.is_dir ? "folder" : "file"}`}>{file.name}</div>
       </div>
       <span>{file.is_dir ? "" : convertBytes(file.size)}</span>
-      { found ? <span className="mx-2 truncate">{file.path}</span> : null }
+      {found ? <span className="mx-2 truncate">{file.path}</span> : null}
     </a>
   );
 }

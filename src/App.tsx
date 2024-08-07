@@ -1,15 +1,12 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
-import "./index.css";
-import { VolumesInfo, FileInfo } from "./types";
-import { open } from "@tauri-apps/api/shell";
-import { useStore } from "./store";
-import { convertBytes, formatSlash } from "./utils";
-import { invoke } from "@tauri-apps/api";
-import { toast, Toaster } from "sonner";
-import { emit, listen } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
+import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
+import FileIcon from "./components/FileIcon";
 import NavBar from "./components/NavBar";
 import Volumes from "./components/Volumes";
-import FileIcon from "./components/FileIcon";
+import "./index.css";
+import { useStore } from "./store";
+import { FileInfo } from "./types";
 
 function App() {
   const [files, displayedPath, getFiles] = useStore((state) => [

@@ -19,7 +19,7 @@ function Volumes() {
         toast("Error: " + e);
       });
   }, []);
-  
+
   return (
     <div className="disks-list">
       {volumes.map((d) => (
