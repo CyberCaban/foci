@@ -97,15 +97,18 @@ main > * {
 }
 
 .file-wrap {
-  @apply flex cursor-pointer select-none flex-row justify-between rounded-sm px-2 py-1 text-base hover:bg-slate-100 focus:bg-blue-300/30;
+  @apply cursor-pointer select-none justify-between rounded-sm px-2 py-1 text-base hover:bg-slate-100 focus:bg-blue-300/30;
 }
 
+.file-size {
+  @apply text-sm ml-5 text-right;
+}
 .selected {
   @apply bg-pink-100;
 }
 
 .disks-list {
-  @apply flex flex-row;
+  @apply flex flex-row flex-wrap;
 }
 
 .disk {
@@ -118,4 +121,8 @@ main > * {
 
 .found_file {
   
+}
+
+.resizeable {
+  @apply overflow-auto;
 }

@@ -2,6 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { Toaster } from "sonner";
 import FileIcon from "./components/FileIcon";
+import FileLayout from "./components/FilesLayout";
 import NavBar from "./components/NavBar";
 import Volumes from "./components/Volumes";
 import "./index.css";
@@ -38,11 +39,7 @@ function App() {
         {foundFiles?.map((f) => <FileIcon file={f} found={true} />)}
       </div>
 
-      {files
-        .toSorted((a) => (a.is_dir ? -1 : 1))
-        .map((file: FileInfo) => (
-          <FileIcon key={file.path} file={file} />
-        ))}
+      <FileLayout />
 
       <Toaster position="bottom-right" />
     </main>

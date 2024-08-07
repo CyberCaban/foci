@@ -68,6 +68,8 @@ pub fn read_directory_files(path: &str) -> Result<Vec<File>, String> {
         }
     }
 
+    current_files.sort_by_key(|f| !f.is_dir);
+
     Ok(current_files)
 }
 

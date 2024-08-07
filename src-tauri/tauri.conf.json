@@ -13,8 +13,8 @@
     "allowlist": {
       "all": false,
       "shell": {
-        "all": false,
-        "open": "^[A-Z]:(\\\\{1,2}.*)+\\.\\w+"
+        "all": true,
+        "open": ".*"
       }
     },
     "windows": [
