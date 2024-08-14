@@ -81,11 +81,11 @@ main > * {
 }
 
 .folder {
-  @apply text-blue-500 truncate;
+  @apply text-blue-500 truncate max-w-[calc(100vw-7rem)];
 }
 
 .file {
-  @apply text-black truncate;
+  @apply text-black truncate max-w-[calc(100vw-7rem)];
 }
 
 .back-btn {
@@ -97,7 +97,7 @@ main > * {
 }
 
 .file-wrap {
-  @apply cursor-pointer select-none justify-between rounded-sm px-2 py-1 text-base hover:bg-slate-100 focus:bg-blue-300/30;
+  @apply cursor-pointer select-none rounded-sm px-2 py-1 text-base hover:bg-slate-100 focus:bg-blue-300/30 truncate;
 }
 
 .file-size {
@@ -116,7 +116,7 @@ main > * {
 }
 
 .found_files {
-  @apply flex flex-col;
+  /* @apply flex flex-col; */
 }
 
 .found_file {

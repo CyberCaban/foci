@@ -45,51 +45,75 @@ function FileIcon({ file, found = false }: FileIconProps) {
     console.log(file);
   }
 
-  async function handleOpenInExplorer(path: string) {
-    if (path.includes(".")) {
+  async function handleOpenInExplorer(file) {
+    if (!file.is_dir) {
+      let path = file.path.split("\\").slice(0, -1).join("\\");
+      await open(path);
       return;
     }
 
-    console.log(path);
-
-    await open(path);
+    await open(file.path);
   }
+
+  const ContextMenu = ({
+    clicked,
+    file,
+  }: {
+    clicked: boolean;
+    file: FileInfo;
+  }) => {
+    return (
+      <>
+        {clicked ? (
+          <div
+            className="absolute bg-gray-500 py-1 px-2 rounded-sm"
+            style={{
+              top: clickedCoords.y,
+              left: clickedCoords.x,
+            }}
+          >
+            <button onClick={() => handleOpenInExplorer(file)}>
+              Open in explorer
+            </button>
+
+            <hr className="my-0.5" />
+
+            <button onClick={() => setClicked(false)}>Close</button>
+          </div>
+        ) : null}
+      </>
+    );
+  };
 
   return (
     <tr
       key={`${file.path}`}
       className={
-        found ? "flex select-none flex-col hover:bg-slate-100" : `file-wrap`
+        found
+          ? "select-none hover:bg-slate-100 max-w-[calc(100vw-2.5rem)]"
+          : `file-wrap max-w-[calc(100vw-2.5rem)]`
       }
       onDoubleClick={(e) => handleDoubleClickOnFile(e, file)}
       onClick={(e) => handleClickOnFile(e, file)}
       onContextMenu={(e) => handleContextMenuOnFile(e, file)}
     >
-      <td className="flex flex-row truncate">
-        <span>{file.is_dir ? "📁" : "📄"}</span>
-        <div className={`${file.is_dir ? "folder" : "file"}`}>{file.name}</div>
+      <td>
+        <div className="flex flex-col truncate">
+          <div className="flex flex-row items-center truncate">
+            <span>{file.is_dir ? "📁" : "📄"}</span>
+            <div className={`${file.is_dir ? "folder" : "file"}`}>
+              {file.name}
+            </div>
+          </div>
+          {found ? (
+            <div className="truncate max-w-[calc(100vw-6rem)]">{file.path}</div>
+          ) : null}
+        </div>
       </td>
       <td className="file-size">
         {file.is_dir ? "" : convertBytes(file.size)}
       </td>
-      {found ? <span className="mx-2 truncate">{file.path}</span> : null}
-      {clicked ? (
-        <div
-          className="absolute bg-gray-500 py-1 px-2 rounded-sm"
-          style={{
-            top: clickedCoords.y,
-            left: clickedCoords.x,
-          }}
-        >
-          {file.is_dir ? (
-            <button onClick={() => handleOpenInExplorer(file.path)}>
-              Open in explorer
-            </button>
-          ) : null}
-          <hr className="my-0.5" />
-          <button onClick={() => setClicked(false)}>Close</button>
-        </div>
-      ) : null}
+      <ContextMenu clicked={clicked} file={file} />
     </tr>
   );
 }
