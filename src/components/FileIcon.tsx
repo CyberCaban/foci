@@ -99,15 +99,13 @@ function FileIcon({ file, found = false }: FileIconProps) {
     >
       <td>
         <div className="flex flex-col truncate">
-          <div className="flex flex-row items-center truncate">
-            <span>{file.is_dir ? "📁" : "📄"}</span>
-            <div className={`${file.is_dir ? "folder" : "file"}`}>
-              {file.name}
-            </div>
+        <div className="flex flex-row items-center truncate">
+          <span>{file.is_dir ? "📁" : "📄"}</span>
+          <div className={`${file.is_dir ? "folder" : "file"}`}>
+            {file.name}
           </div>
-          {found ? (
-            <div className="truncate max-w-[calc(100vw-6rem)]">{file.path}</div>
-          ) : null}
+        </div>
+        {found ? <div className="truncate max-w-[calc(100vw-6rem)]">{file.path}</div> : null}
         </div>
       </td>
       <td className="file-size">
