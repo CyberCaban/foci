@@ -21,7 +21,7 @@ function FileLayout() {
         </tr>
       </thead>
       <tbody>
-        {files.map((file: FileInfo) => (
+        {files.length > 0 && files.map((file: FileInfo) => (
           <FileIcon key={file.path} file={file} />
         ))}
       </tbody>

@@ -17,6 +17,7 @@ interface navStore {
 interface SearchStore {
   foundFiles: FileInfo[];
   setFoundFiles: (files: FileInfo[]) => void;
+  pushFoundFiles: (file: FileInfo) => void;
   pendingSearch: boolean;
   setPendingSearch: (pending: boolean) => void;
 }
@@ -65,8 +66,11 @@ const createSearchStore: StateCreator<SearchStore, [], [], SearchStore> = (
   set,
 ) => ({
   foundFiles: [],
-  setFoundFiles: (foundFiles) => {
-    set({ foundFiles });
+  setFoundFiles: (foundFiles) => set({ foundFiles }),
+  pushFoundFiles: (file) => {
+    set((state) => ({
+      foundFiles: [...state.foundFiles, file],
+    }));
   },
   pendingSearch: false,
   setPendingSearch: (pending) => {

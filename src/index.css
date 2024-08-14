@@ -116,7 +116,7 @@ main > * {
 }
 
 .found_files {
-  @apply flex flex-col;
+  /* @apply flex flex-col; */
 }
 
 .found_file {

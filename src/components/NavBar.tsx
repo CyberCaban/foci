@@ -1,4 +1,5 @@
 import { useStore } from "@/store";
+import { FileInfo } from "@/types";
 import { formatSlash } from "@/utils";
 import { emit, listen } from "@tauri-apps/api/event";
 import { FormEvent, useEffect, useRef } from "react";
@@ -13,6 +14,8 @@ function NavBar() {
     setFoundFiles,
     pendingSearch,
     setPendingSearch,
+    foundFiles,
+    pushFoundFiles
   ] = useStore((state) => [
     state.displayedPath,
     state.dirUp,
@@ -21,6 +24,8 @@ function NavBar() {
     state.setFoundFiles,
     state.pendingSearch,
     state.setPendingSearch,
+    state.foundFiles,
+    state.pushFoundFiles
   ]);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -33,9 +38,15 @@ function NavBar() {
       }
       console.log(e);
     });
+    const unlistenFileFound = listen<FileInfo>("file-found", (e) => {
+      console.log(e);
+      pushFoundFiles(e.payload as FileInfo);
+      // setFoundFiles([...foundFiles, e.payload as FileInfo]);
+    });
 
     return () => {
       unlistenSearchStatus.then((f) => f());
+      unlistenFileFound.then((f) => f());
     };
   }, []);
 
